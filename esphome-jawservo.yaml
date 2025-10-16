@@ -1,0 +1,162 @@
+esphome:
+  name: esphome-web-3a75c8
+  friendly_name: ESPHome Skull
+  min_version: 2025.9.0
+  name_add_mac_suffix: false
+  comment: >
+    Runs KA2284 LED sound meter and drives jaw servo with manual controls.
+
+esp32:
+  board: esp32dev
+  framework:
+    type: arduino
+
+logger:
+  level: DEBUG
+
+api:
+  encryption:
+    key: !secret api_key
+
+ota:
+  platform: esphome
+  password: !secret ota_pwd
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  ap:
+    ssid: "Skull-Jaw-AP"
+    password: "12345678"
+
+captive_portal:
+
+# ============================
+# I²S loudness sensor
+# ============================
+sensor:
+  - platform: i2s_rms
+    name: "I2S Loudness"
+    id: i2s_loudness     # <-- important
+    update_interval: 25ms
+    # (optional) pin_bclk: 26
+    # (optional) pin_ws: 27
+    # (optional) pin_data: 33
+
+
+# ============================
+# Servo
+# ============================
+output:
+  - platform: ledc
+    id: jaw_pwm
+    pin: GPIO23
+    frequency: 50 Hz
+
+servo:
+  - id: jaw_servo
+    output: jaw_pwm
+    min_level: 3%
+    max_level: 12%
+    restore: false
+    auto_detach_time: 1s 
+
+# ============================
+# Jaw animation logic
+# ============================
+globals:
+  - id: jaw_enabled
+    type: bool
+    restore_value: yes
+    initial_value: 'true'
+
+interval:
+  - interval: 25ms
+    then:
+      - lambda: |-
+          // Skip if animation disabled
+          if (!id(jaw_enabled)) return;
+
+          // --------------  INPUT GAIN  --------------
+          // Amplify loudness signal to exaggerate motion
+          float gain = 1.6f;     // 1.0 = normal, >1 = more motion
+          float L = id(i2s_loudness).state * gain;
+          if (L > 1.0f) L = 1.0f;  // clamp
+
+          // --------------  SMOOTH ENVELOPE  --------------
+          static float env = 0.0f;
+          const float ATTACK  = 0.75f;   // faster jaw open
+          const float RELEASE = 0.12f;   // slower close for realism
+          if (L > env)
+            env += (L - env) * ATTACK;
+          else
+            env += (L - env) * RELEASE;
+
+          // --------------  SERVO MAPPING  --------------
+          // Adjust these for your physical range
+          const float SERVO_FLOOR = 0.28f;   // jaw closed
+          const float SERVO_MAX   = 0.95f;   // jaw fully open
+
+          float pos = SERVO_FLOOR + env * (SERVO_MAX - SERVO_FLOOR);
+          if (pos < SERVO_FLOOR) pos = SERVO_FLOOR;
+          if (pos > SERVO_MAX)   pos = SERVO_MAX;
+
+          // --------------  OUTPUT  --------------
+          id(jaw_servo).write(pos);
+
+
+# ============================
+# Control switches
+# ============================
+switch:
+  - platform: template
+    name: "Jaw Animation Enable"
+    id: jaw_enable_switch
+    lambda: |-
+      return id(jaw_enabled);
+    turn_on_action:
+      - globals.set: { id: jaw_enabled, value: 'true' }
+    turn_off_action:
+      - globals.set: { id: jaw_enabled, value: 'false' }
+
+  - platform: template
+    name: "Jaw 30%"
+    turn_on_action:
+      - globals.set: { id: jaw_enabled, value: 'false' }
+      - servo.write: { id: jaw_servo, level: 0.30 }
+
+  - platform: template
+    name: "Jaw 50%"
+    turn_on_action:
+      - globals.set: { id: jaw_enabled, value: 'false' }
+      - servo.write: { id: jaw_servo, level: 0.50 }
+
+  - platform: template
+    name: "Jaw 60%"
+    turn_on_action:
+      - globals.set: { id: jaw_enabled, value: 'false' }
+      - servo.write: { id: jaw_servo, level: 0.60 }
+
+  - platform: template
+    name: "Jaw Servo Test (Cycle)"
+    turn_on_action:
+      - repeat:
+          count: 3
+          then:
+            - servo.write: { id: jaw_servo, level: 0.90 }
+            - delay: 300ms
+            - servo.write: { id: jaw_servo, level: 0.30 }
+            - delay: 300ms
+  - platform: template
+    name: "Jaw I2S Enable"
+    id: jaw_i2s_enable
+    lambda: |-
+      return id(i2s_loudness).is_started();
+    turn_on_action:
+      - lambda: |-
+          id(i2s_loudness).start();    // start RX driver now
+      - logger.log: "I2S RX started"
+    turn_off_action:
+      - lambda: |-
+          id(i2s_loudness).stop();     // uninstall RX driver
+      - logger.log: "I2S RX stopped"

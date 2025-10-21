@@ -41,14 +41,25 @@ media_player:
     i2s_audio_id: amp_audio_bus
     i2s_dout_pin: GPIO33    # DIN → amplifier input
     mode: mono
-    on_play:
-      - logger.log: "Audio playback started"
-    on_idle:
-      - logger.log: "Audio playback finished"
+    #on_play:
+      #- logger.log: "💀 Audio playback started — eyes ON"
+     # - switch.turn_on: skull_eyes_switch
+    #on_idle:
+    #  - logger.log: "🕯️ Audio playback finished — eyes OFF"
+    #  - switch.turn_off: skull_eyes_switch
 
-# ======================
-# Switches
-# ======================
+# -------------------------------------------------
+# LED EYES (Simple GPIO output to light up eyes)
+# -------------------------------------------------
 switch:
+  - platform: gpio
+    id: skull_eyes_switch
+    name: "Skull Eyes"
+    pin: GPIO4              # 👁️ LED eyes power pin
+    restore_mode: ALWAYS_ON
+
+# -------------------------------------------------
+# RESTART SWITCH
+# -------------------------------------------------
   - platform: restart
     name: "SkullAudio Restart"

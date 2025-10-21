@@ -25,15 +25,9 @@ ota:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-  ap:
-    ssid: "Skull-Jaw-AP"
-    password: "12345678"
 
 captive_portal:
 
-# ============================
-# I²S loudness sensor
-# ============================
 sensor:
   - platform: i2s_rms
     name: "I2S Loudness"
@@ -42,7 +36,6 @@ sensor:
     # (optional) pin_bclk: 26
     # (optional) pin_ws: 27
     # (optional) pin_data: 33
-
 
 # ============================
 # Servo
@@ -56,7 +49,7 @@ output:
 servo:
   - id: jaw_servo
     output: jaw_pwm
-    min_level: 3%
+    min_level: 8%
     max_level: 12%
     restore: false
     auto_detach_time: 1s 

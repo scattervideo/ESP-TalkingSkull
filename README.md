@@ -5,9 +5,11 @@ It’s based on the original JawDuino concept by Mike (Arduino + KA2284 LED soun
 ________________________________________
 🧩 Overview
 Two ESP32 devices work together:
-Device	Role	Description
+
 ESP32 #1 (Audio)	Audio/TTS playback	Plays TTS or MP3 files using a MAX98357A I²S amplifier.
+
 ESP32 #2 (Jaw Control)	Servo motion	Moves the skull’s jaw in sync with sound amplitude captured from the audio line.
+
 Audio output and control signals are shared between them through a safe resistor divider.
 ________________________________________
 📁 Repository Structure

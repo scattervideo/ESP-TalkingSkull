@@ -15,6 +15,7 @@ ________________________________________
 ⚙️ YAML File Descriptions
 🎙️ esphome-jawservo — Audio/TTS Controller
 Handles text-to-speech playback and streams audio to the MAX98357A amplifier.
+
 Key Features:
 •	I²S audio output via GPIO26 (BCLK), GPIO27 (LRCLK), GPIO25 (DIN)
 •	Works as a Home Assistant media_player
@@ -23,6 +24,7 @@ Key Features:
 ________________________________________
 🦴 esphome-jawservo.yaml — Jaw Servo Controller
 Controls the jaw servo based on the incoming audio amplitude.
+
 Key Features:
 •	Reads analog input (ADC) corresponding to audio amplitude
 •	Smoothly moves the jaw servo proportionally to loudness

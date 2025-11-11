@@ -1,0 +1,213 @@
+alias: Talking Skull AI Halloween
+description: ""
+triggers:
+  - trigger: state
+    entity_id:
+      - event.front_door_motion
+    to: "on"
+  - trigger: state
+    entity_id:
+      - binary_sensor.frontcam_amcrest_motion_detected
+    to: "on"
+  - trigger: state
+    entity_id:
+      - binary_sensor.frontmotion_motion_detection
+    to: "on"
+conditions:
+  - condition: state
+    entity_id: input_boolean.bonejovi_streaming
+    state: "off"
+actions:
+  - alias: Analyze front camera for activity
+    action: llmvision.image_analyzer
+    data:
+      include_filename: false
+      target_width: 1280
+      max_tokens: 500
+      expose_images: true
+      provider: 01JWS926H9KA6SEXMAWAMQH72B
+      image_entity:
+        - camera.frontcam_amcrest
+      remember: true
+      message: >
+        Look at the provided camera image and describe who or what you see that
+        is new, moving, or alive — anyone or anything that doesn’t belong to the
+        usual still background like walls or decorations.  Only describe people
+        and ignore any cars or vehicles.
+
+        Speak as if addressing them directly.  
+
+        Use **second-person phrasing** such as “you with the blue shirt” or “you
+        holding your phone.”  
+
+        Do not say “a man” or “a woman”; instead, describe them **as if they are
+        standing before you.**
+
+        Make your description short (under 10 words) and eerie, focusing on what
+        stands out:
+
+        - Mention visible details like clothing color, hat, hair, packages, or
+        company uniform (Amazon, FedEx, UPS, etc.).
+
+        - If you see an animal or object, describe it briefly and directly
+        (“black cat near you,” “shadow moving at your feet”).
+
+        - Avoid full sentences, punctuation, or extra commentary.
+
+        If you see **no person, animal, movement, or object**, respond **only**
+        with the exact single word:
+
+        NothingFound
+    response_variable: analysis
+  - alias: Skip if NothingFound
+    condition: template
+    value_template: >-
+      {% set text = (analysis.response_text | default('') | trim | lower) %} {{
+      text != '' and 'nothingfound' not in text }}
+    enabled: true
+  - variables:
+      description: "{{ analysis.response_text | default('') | trim }}"
+      phrase: >-
+        {% set desc = description %} {% if desc | lower == 'nothingfound' or
+        desc == '' %}
+          NothingFound
+        {% else %}
+          {% set lines = [
+            "Oh look who wandered in {description}. Another human with more makeup than courage.  You are not that impressive. Halloween used to mean something. Real screams. Real terror. Pathetic. Anyway enjoy the night. Try not to lose your head. I already did",
+            "Come closer {description},  let me mock you. In my day we real scares with plagues and guillotines.  Trick or treat you sugary fiends.   Soon you will join me in the cold beyond. Happy Halloween,  now Scram or I will  kill your WiFi",
+            "{description}, you dare awaken me from my eternal slumber in the crypt",
+            "{description}, approach if you dare, pitiful mortal, my fangs ache for a mere nibble of your flesh",
+            "The rotting grave could not contain my vengeful spirit, nor will you, {description}",
+            "Boo {description}, Did the icy breath of death send shivers down your spine",
+            "Flee now {description}, while your heart still beats",
+            "{description} The cold, hungry grave yawns wide, waiting for you",            
+            "{description} Dare not glance behind you unspeakable horrors await",
+            "{description} Come closer, let me devour the exquisite terror in your eyes",
+            "BOO {description}, Too late, my spectral grasp has claimed you",
+            "{description}, Run flee into the night before the darkness consumes you",
+            "{description}, You fancied yourself safe Muahaha, how foolish",
+            "{description}, The abyssal darkness hisses your name eternally",
+            "{description} my icy, bony fingers claw to snatch your soul",
+            "Your terror fuels the undead horde; scream louder, {description}",
+            "{description}, Welcome to the nightmare realm from which no one awakens",
+            "Come closer {description}, I will not bite much",
+            "{description}, leave now while you still can",
+            "The grave is cold and waiting for {description}",
+            "{description}, Your time is almost up",
+            "{description}, Do not look behind you",
+            "Come {description}, let me taste your fear",
+            "BOO {description}, Too late I already got you",
+            "{description}, Run now before it is too late",
+            "{description}, You thought you were safe HAHA, HAHA, HAHA",
+            "The darkness whispers your name over and over, {description}",
+            "{description}, my Cold hands are reaching for your soul",
+            "{description}, your fear makes the dead stronger keep screaming",
+            "{description}, Welcome to your nightmare"
+          ] %}   
+
+          {% set random_line = lines | random | replace('{description}', desc) %}
+          Boo to you, {{ random_line }}
+
+        {% endif %}
+  - target:
+      entity_id:
+        - switch.esphome_web_3a75c8_jaw_i2s_enable
+        - switch.esphome_web_3a75c8_jaw_animation_enable
+        - switch.esphome_web_46b020_skull_eyes
+    action: switch.turn_on
+    data: {}
+  - delay: "00:00:00.200"
+  - alias: Speak phrase through skull speaker
+    action: tts.speak
+    target:
+      entity_id: tts.piper
+    data:
+      message: "{{ phrase }}"
+      media_player_entity_id: media_player.esphome_web_46b020_talking_skull_speaker
+      cache: true
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 15
+      milliseconds: 0
+  - variables:
+      description: "{{ analysis.response_text | default('') | trim }}"
+      phrase: >-
+        {% set desc = description %} {% if desc | lower == 'nothingfound' or
+        desc == '' %}
+          NothingFound
+        {% else %}
+          {% set lines = [
+            "Oh look who wandered in {description}. Another human with more makeup than courage.  You are not that impressive. Halloween used to mean something. Real screams. Real terror. Pathetic. Anyway enjoy the night. Try not to lose your head. I already did",
+            "Come closer {description},  let me mock you. In my day we real scares with plagues and guillotines.  Trick or treat you sugary fiends.   Soon you will join me in the cold beyond. Happy Halloween,  now Scram or I will  kill your WiFi",
+            "{description}, you dare awaken me from my eternal slumber in the crypt",
+            "{description}, approach if you dare, pitiful mortal, my fangs ache for a mere nibble of your flesh",
+            "The rotting grave could not contain my vengeful spirit, nor will you, {description}",
+            "Boo {description}, Did the icy breath of death send shivers down your spine",
+            "Flee now {description}, while your heart still beats",
+            "{description} The cold, hungry grave yawns wide, waiting for you",            
+            "{description} Dare not glance behind you unspeakable horrors await",
+            "{description} Come closer, let me devour the exquisite terror in your eyes",
+            "BOO {description}, Too late, my spectral grasp has claimed you",
+            "{description}, Run flee into the night before the darkness consumes you",
+            "{description}, You fancied yourself safe Muahaha, how foolish",
+            "{description}, The abyssal darkness hisses your name eternally",
+            "{description} my icy, bony fingers claw to snatch your soul",
+            "Your terror fuels the undead horde; scream louder, {description}",
+            "{description}, Welcome to the nightmare realm from which no one awakens",
+            "Come closer {description}, I will not bite much",
+            "{description}, leave now while you still can",
+            "The grave is cold and waiting for {description}",
+            "{description}, Your time is almost up",
+            "{description}, Do not look behind you",
+            "Come {description}, let me taste your fear",
+            "BOO {description}, Too late I already got you",
+            "{description}, Run now before it is too late",
+            "{description}, You thought you were safe HAHA, HAHA, HAHA",
+            "The darkness whispers your name over and over, {description}",
+            "{description}, my Cold hands are reaching for your soul",
+            "{description}, your fear makes the dead stronger keep screaming",
+            "{description}, Welcome to your nightmare"
+          ] %}
+          {% set random_line = lines | random | replace('{description}', desc) %}
+          Boo to you, {{ random_line }}
+        {% endif %}
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 3
+      milliseconds: 0
+  - alias: Speak phrase through skull speaker
+    action: tts.speak
+    target:
+      entity_id: tts.piper
+    data:
+      message: "{{ phrase }}"
+      media_player_entity_id: media_player.esphome_web_46b020_talking_skull_speaker
+      cache: true
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 15
+      milliseconds: 0
+  - alias: Notify with AI result
+    action: notify.cg_pg_appnotify
+    data:
+      title: Talking AI Notify
+      message: |-
+        {{ phrase }}
+        {{ analysis.response_text }}
+        {{ analysis.key_frame }}      
+  - target:
+      entity_id:
+        - switch.esphome_web_3a75c8_jaw_animation_enable
+        - switch.esphome_web_3a75c8_jaw_i2s_enable
+    action: switch.turn_off
+    data: {}
+  - delay:
+      hours: 0
+      minutes: 0
+      seconds: 15
+      milliseconds: 0
+    enabled: true
+mode: single
